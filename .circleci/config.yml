@@ -24,7 +24,7 @@ jobs:
             git config --global user.email "marc.andre.dufresne@gmail.com"
             git config --global user.name "MarcDufresne"
             git commit -m "Update data"
-            git push origin master
+            git push
 
 workflows:
   version: 2
