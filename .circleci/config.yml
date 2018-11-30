@@ -11,7 +11,7 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "a5:ed:e8:86:da:68:e5:2b:8d:1a:5b:ed:7f:56:c2:30"
+            - "0c:e9:2d:59:2e:36:1b:eb:a0:a9:0f:cd:95:f0:88:a6"
 
       - checkout
 
@@ -26,7 +26,7 @@ jobs:
           name: Commit changes
           command: |
             git add docs
-            git config --global user.email "circleci@circleci.com"
-            git config --global user.name "CircleCI"
+            git config --global user.email "marc.andre.dufresne@gmail.com"
+            git config --global user.name "MarcDufresne"
             git commit -m "Update data"
             git push origin master
