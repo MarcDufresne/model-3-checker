@@ -1,0 +1,27 @@
+# Python CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+#
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.6
+
+    steps:
+      - checkout
+
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      - run:
+          name: Update data
+          command: make docker-generate
+
+      - run:
+          name: Commit changes
+          command: |
+            echo -n ${DEPLOY_KEY} | base64 -d >> ~/.ssh/id_rsa
+            git add docs
+            git commit -m "Update data"
+            git push origin master

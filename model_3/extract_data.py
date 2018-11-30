@@ -1,6 +1,9 @@
+import datetime
+import os
 from time import sleep
 
 import click
+import ujson
 from selenium import webdriver
 
 
@@ -146,10 +149,16 @@ def load_data():
         "eap": {
             "price": eap_price,
             "later": eap_later_price
-        }
+        },
+        "last_updated": datetime.datetime.utcnow().isoformat(sep=" ")
     }
 
     print(data)
+
+    click.echo("Writing 'data.json' file...")
+    cur_dir = os.path.dirname(os.path.realpath(__file__))
+    with open(os.path.join(cur_dir, os.path.pardir, 'docs', 'data.json'), mode="w") as f:
+        f.write(ujson.dumps(data))
 
     return data
 

@@ -8,6 +8,8 @@ authors = ["MarcDufresne <marc.andre.dufresne@gmail.com>"]
 python = "^3.6"
 selenium = "^3.141"
 click = "^7.0"
+jinja2 = "^2.10"
+ujson = "^1.35"
 
 [tool.poetry.dev-dependencies]
 

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="main">
+        <div class="row mt-5">
+            <div class="col-sm-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">Mid-Range RWD</h5>
+                        <p class="card-text text-success font-weight-bold">{{ trims.mr_rwd.price }}</p>
+                        <p class="card-text text-secondary small">{{ trims.mr_rwd.availability }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">Long-Range AWD</h5>
+                        <p class="card-text text-success font-weight-bold">{{ trims.lr_awd.price }}</p>
+                        <p class="card-text text-secondary small">{{ trims.lr_awd.availability }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">Long-Range Performance</h5>
+                        <p class="card-text text-success font-weight-bold">{{ trims.lr_perf.price }}</p>
+                        <p class="card-text text-secondary small">{{ trims.lr_perf.availability }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-5">
+            <div class="col-sm-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Paint Options</h5>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        {% for paint_name, paint_price in paint.items() %}
+                            <li class="list-group-item">
+                                {{ paint_name }}
+                                <span class="list-price">
+                                {{ paint_price }}
+                            </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="card-body">
+                        <h5 class="card-title">Wheel Options</h5>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        {% for wheel_name, wheel_price in wheels.items() %}
+                            <li class="list-group-item">
+                                {{ wheel_name }}
+                                <span class="list-price">
+                                {{ wheel_price }}
+                            </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title ">Interior Options</h5>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        {% for interior_name, interior_price in interiors.items() %}
+                            <li class="list-group-item">
+                                {{ interior_name }}
+                                <span class="list-price">
+                                {{ interior_price }}
+                            </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="card-body">
+                        <h5 class="card-title">Misc</h5>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            EAP
+                            <span class="list-price">
+                            {{ eap.price }}
+                        </span>
+                            <span class="list-price text-secondary small">{{ eap.later }}</span>
+                        </li>
+                        <li class="list-group-item">
+                            {{ std_battery }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-5">
+        <div class="col-sm text-center">
+            <p class="text-secondary small">Last Updated: {{ last_updated }} UTC</p>
+        </div>
+    </div>
+{% endblock %}

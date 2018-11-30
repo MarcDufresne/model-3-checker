@@ -1,0 +1,9 @@
+body {
+    background: #eeeeee;
+}
+
+.list-price {
+    display: inline-block;
+    float: right;
+    clear: both;
+}
