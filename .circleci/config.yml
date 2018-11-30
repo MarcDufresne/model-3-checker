@@ -23,5 +23,7 @@ jobs:
           command: |
             echo -n ${DEPLOY_KEY} | base64 -d >> ~/.ssh/id_rsa
             git add docs
+            git config --global user.email "circleci@circleci.com"
+            git config --global user.name "CircleCI"
             git commit -m "Update data"
             git push origin master
