@@ -9,7 +9,7 @@ docker-generate:
 	docker rm m3
 
 bootstrap:
-	pip install poetry==0.12.10
+	sudo pip install poetry==0.12.10
 
 install:
 	poetry install
