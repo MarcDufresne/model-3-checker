@@ -1,26 +1,21 @@
-# Python CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-python/ for more details
-#
 version: 2
 jobs:
   build:
     docker:
-      - image: circleci/python:3.6
+      - image: circleci/python:3.6-stretch-browsers
 
     steps:
-      - add_ssh_keys:
-          fingerprints:
-            - "0c:e9:2d:59:2e:36:1b:eb:a0:a9:0f:cd:95:f0:88:a6"
-
       - checkout
 
-      - setup_remote_docker:
-          docker_layer_caching: true
+      - run:
+          name: Install env
+          command: |
+            make bootstrap
+            make install
 
       - run:
           name: Update data
-          command: make docker-generate
+          command: make update-data
 
       - run:
           name: Commit changes
@@ -30,3 +25,16 @@ jobs:
             git config --global user.name "MarcDufresne"
             git commit -m "Update data"
             git push origin master
+
+workflows:
+  version: 2
+  build:
+    triggers:
+      - schedule:
+          cron: "0 */2 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - build
