@@ -38,3 +38,9 @@ workflows:
                 - master
     jobs:
       - build
+  force:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only: force
