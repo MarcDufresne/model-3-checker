@@ -40,9 +40,7 @@
                         {% for paint_name, paint_price in paint.items() %}
                             <li class="list-group-item">
                                 {{ paint_name }}
-                                <span class="list-price">
-                                {{ paint_price }}
-                            </span>
+                                <span class="list-price">{{ paint_price }}</span>
                             </li>
                         {% endfor %}
                     </ul>
@@ -53,9 +51,7 @@
                         {% for wheel_name, wheel_price in wheels.items() %}
                             <li class="list-group-item">
                                 {{ wheel_name }}
-                                <span class="list-price">
-                                {{ wheel_price }}
-                            </span>
+                                <span class="list-price">{{ wheel_price }}</span>
                             </li>
                         {% endfor %}
                     </ul>
@@ -70,9 +66,7 @@
                         {% for interior_name, interior_price in interiors.items() %}
                             <li class="list-group-item">
                                 {{ interior_name }}
-                                <span class="list-price">
-                                {{ interior_price }}
-                            </span>
+                                <span class="list-price">{{ interior_price }}</span>
                             </li>
                         {% endfor %}
                     </ul>
@@ -82,14 +76,23 @@
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item">
                             EAP
-                            <span class="list-price">
-                            {{ eap.price }}
-                        </span>
+                            <span class="list-price">{{ eap.price }}</span>
                             <span class="list-price text-secondary small">{{ eap.later }}</span>
                         </li>
                         <li class="list-group-item">
                             {{ std_battery }}
                         </li>
+                    </ul>
+                    <div class="card-body">
+                        <h5 class="card-title">Incentives</h5>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        {% for region, amount in incentives.items() %}
+                            <li class="list-group-item">
+                                {{ region }}
+                                <span class="list-price">{{ amount }}</span>
+                            </li>
+                        {% endfor %}
                     </ul>
                 </div>
             </div>
@@ -98,7 +101,12 @@
     <div class="row mt-5">
         <div class="col-sm text-center">
             <p class="text-secondary small">
-                Last Updated: {{ last_updated }} UTC
+                All amounts shown are CAD and exclude any taxes, fees and savings.
+            </p>
+            <p class="text-secondary small">
+                Last Updated: <span id="last_update">{{ last_updated }}</span> UTC
+                <br>
+                Last Change: <span id="last_change">{{ last_changed }}</span> UTC
                 <br>
                 Updates every 4 hours
             </p>

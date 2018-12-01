@@ -13,11 +13,21 @@ def load_data_command():
 
 
 def load_data():
+
+    cur_dir = os.path.dirname(os.path.realpath(__file__))
+    data_json_filepath = os.path.join(cur_dir, os.path.pardir, 'docs', 'data.json')
+    with open(data_json_filepath, mode="r") as data_file:
+        previous_data = ujson.loads(data_file.read())
+
+    previous_change = previous_data.get("last_changed", None)
+    previous_data.pop("last_updated", None)
+    previous_data.pop("last_changed", None)
+
     # Set up browser
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument("disable-gpu")
     chrome_options.add_argument("no-sandbox")
-    chrome_options.add_argument("headless")
+    # chrome_options.add_argument("headless")
     chrome_options.add_argument("--window-size=1280,960")
     chrome_options.add_experimental_option('prefs', {'intl.accept_languages': 'en_CA'})
     driver = webdriver.Chrome(options=chrome_options)
@@ -127,6 +137,32 @@ def load_data():
     nav_headers[4].click()
     sleep(1)
 
+    driver.find_element_by_class_name("finance-content--modal").click()
+    driver.find_element_by_class_name("tds-tabs--vertical").find_elements_by_class_name("tds-tab-label")[2].click()
+    sleep(1)
+
+    try:
+        driver.find_element_by_class_name("action-trigger--link").click()
+    except Exception:
+        pass
+
+    regions_list = driver.find_element_by_class_name("incentives--region-list")
+    regions_links = regions_list.find_elements_by_class_name("action-trigger--link")
+
+    incentives = {}
+
+    region_index = 0
+    while region_index < len(regions_links):
+        region = (driver.find_element_by_class_name("incentives--region-list")
+                  .find_elements_by_class_name("action-trigger--link")[region_index])
+        region_name = region.text
+        region.click()
+        incentive_block = driver.find_element_by_class_name("incentives--value-block")
+        incentive_value = incentive_block.find_element_by_class_name("value").text
+        incentives[region_name] = incentive_value
+        driver.find_element_by_class_name("action-trigger--link").click()
+        region_index += 1
+
     data = {
         "trims": {
             "mr_rwd": {
@@ -150,14 +186,24 @@ def load_data():
             "price": eap_price,
             "later": eap_later_price
         },
-        "last_updated": datetime.datetime.utcnow().isoformat(sep=" ")
+        "incentives": incentives,
     }
+
+    changed = previous_data != data
+
+    last_changed = previous_change
+    now_isoformat = datetime.datetime.utcnow().isoformat(sep=" ")
+
+    if changed:
+        last_changed = now_isoformat
+
+    data["last_updated"] = now_isoformat
+    data["last_changed"] = last_changed or now_isoformat
 
     print(data)
 
     click.echo("Writing 'data.json' file...")
-    cur_dir = os.path.dirname(os.path.realpath(__file__))
-    with open(os.path.join(cur_dir, os.path.pardir, 'docs', 'data.json'), mode="w") as f:
+    with open(data_json_filepath, mode="w") as f:
         f.write(ujson.dumps(data))
 
     return data
