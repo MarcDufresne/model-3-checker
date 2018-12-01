@@ -6,6 +6,8 @@ import click
 import ujson
 from selenium import webdriver
 
+from model_3 import action, done
+
 
 @click.command("load_data")
 @click.option("--display", is_flag=True)
@@ -211,14 +213,6 @@ def load_data(headless: bool = True):
     done()
 
     return data
-
-
-def action(message: str, color: str = "blue"):
-    click.secho(message, nl=False, fg=color)
-
-
-def done():
-    click.secho("Done!", fg="green")
 
 
 if __name__ == '__main__':
