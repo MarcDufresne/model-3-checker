@@ -1,7 +1,7 @@
-import datetime
 import os
 from time import sleep
 
+import arrow
 import click
 import ujson
 from selenium import webdriver
@@ -196,13 +196,13 @@ def load_data(headless: bool = True):
     changed = previous_data != data
 
     last_changed = previous_change
-    now_isoformat = datetime.datetime.utcnow().isoformat(sep=" ")
+    now_format = arrow.utcnow().format(fmt="MMM D YYYY, HH:mm", locale='en_ca')
 
     if changed:
-        last_changed = now_isoformat
+        last_changed = now_format
 
-    data["last_updated"] = now_isoformat
-    data["last_changed"] = last_changed or now_isoformat
+    data["last_updated"] = now_format
+    data["last_changed"] = last_changed or now_format
 
     click.secho(f"\nData:", fg="blue")
     click.echo(ujson.dumps(data, indent=2))
