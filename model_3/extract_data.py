@@ -8,37 +8,46 @@ from selenium import webdriver
 
 
 @click.command("load_data")
-def load_data_command():
-    load_data()
+@click.option("--display", is_flag=True)
+def load_data_command(display: bool):
+    load_data(headless=not display)
 
 
-def load_data():
+def load_data(headless: bool = True):
 
+    action("Loading previous data... ")
     cur_dir = os.path.dirname(os.path.realpath(__file__))
     data_json_filepath = os.path.join(cur_dir, os.path.pardir, 'docs', 'data.json')
     with open(data_json_filepath, mode="r") as data_file:
         previous_data = ujson.loads(data_file.read())
+    done()
 
     previous_change = previous_data.get("last_changed", None)
     previous_data.pop("last_updated", None)
     previous_data.pop("last_changed", None)
 
     # Set up browser
+    action("Starting Chrome browser... ")
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument("disable-gpu")
     chrome_options.add_argument("no-sandbox")
-    # chrome_options.add_argument("headless")
+    if headless:
+        chrome_options.add_argument("headless")
     chrome_options.add_argument("--window-size=1280,960")
     chrome_options.add_experimental_option('prefs', {'intl.accept_languages': 'en_CA'})
     driver = webdriver.Chrome(options=chrome_options)
+    done()
 
     # GET page
     driver.get("https://3.tesla.com/en_CA/model3/design?redirect=no")
 
     # Extract standard battery data
+    action("Getting standard battery availability... ")
     standard_battery_availability = driver.find_element_by_class_name("group--disclaimer").text
+    done()
 
     # Extract trim data
+    action("Getting trims... ")
     trim_options = driver.find_elements_by_class_name("group--options_block")
     mr_rwd = trim_options[0]
     lr_awd = trim_options[1]
@@ -59,14 +68,9 @@ def load_data():
     lr_perf_full_price = finance_item_prices[1].text
     lr_perf_avail = driver.find_element_by_class_name("delivery-timing--date").text
 
-    # Show trim and standard battery details
-    print(f"Mid Range, RWD: {mr_rwd_full_price} | {mr_rwd_avail}")
-    print(f"Long Range, AWD: {lr_awd_full_price} | {lr_awd_avail}")
-    print(f"Long Range, Performance: {lr_perf_full_price} | {lr_perf_avail}")
-    print(f"{standard_battery_availability}")
-
     # Reset trim selection
     mr_rwd.click()
+    done()
 
     # Navigate to exterior options
     nav_headers = driver.find_elements_by_class_name("packages-options--nav-title")
@@ -80,6 +84,7 @@ def load_data():
     paint_options, wheel_options = exterior_options[:5], exterior_options[5:]
 
     # Extract paint data
+    action("Getting paint options... ")
     paints = {}
     for paint_opt in paint_options:
         paint_opt.click()
@@ -87,8 +92,10 @@ def load_data():
         paint_price = driver.find_elements_by_class_name("group-option--detail-container_price")[0].text
         paints[paint_name] = paint_price
     paint_options[0].click()
+    done()
 
     # Extract wheel data
+    action("Getting wheel options... ")
     wheels = {}
     for wheel_opt in wheel_options:
         wheel_opt.click()
@@ -96,13 +103,7 @@ def load_data():
         wheel_price = driver.find_elements_by_class_name("group-option--detail-container_price")[1].text
         wheels[wheel_name] = wheel_price
     wheel_options[0].click()
-
-    # Display paint and wheel data
-    for paint_name, paint_price in paints.items():
-        print(f"Paint {paint_name}: {paint_price}")
-
-    for wheel_name, wheel_price in wheels.items():
-        print(f"Wheels {wheel_name}: {wheel_price}")
+    done()
 
     # Navigate to Interior options
     nav_headers[2].click()
@@ -111,6 +112,7 @@ def load_data():
     interior_options = driver.find_elements_by_class_name("group--options_asset--container")
 
     # Extract interior options
+    action("Getting interior options... ")
     interiors = {}
     for interior in interior_options:
         interior.click()
@@ -118,35 +120,34 @@ def load_data():
         interior_price = driver.find_element_by_class_name("group-option--detail-container_price").text
         interiors[interior_name] = interior_price
     interior_options[0].click()
-
-    # Display interior options
-    for interior_name, interior_price in interiors.items():
-        print(f"Interior {interior_name}: {interior_price}")
+    done()
 
     # Navigate to Autopilot
     nav_headers[3].click()
     sleep(1)
 
     # Extract EAP details
+    action("Getting EAP pricing... ")
     eap_price = driver.find_element_by_class_name("group--options_card-container_price").text
     eap_later_price = driver.find_element_by_class_name("group--option-disclaimer").text
-
-    print(f"EAP: {eap_price}, {eap_later_price}")
+    done()
 
     # Navigate to Payment
     nav_headers[4].click()
     sleep(1)
 
+    # Incentives
+    action("Getting incentives... ")
     driver.find_element_by_class_name("finance-content--modal").click()
     driver.find_element_by_class_name("tds-tabs--vertical").find_elements_by_class_name("tds-tab-label")[2].click()
     sleep(1)
 
     try:
-        driver.find_element_by_class_name("action-trigger--link").click()
+        regions_list = driver.find_element_by_class_name("incentives--region-list")
     except Exception:
-        pass
+        driver.find_element_by_class_name("action-trigger--link").click()
+        regions_list = driver.find_element_by_class_name("incentives--region-list")
 
-    regions_list = driver.find_element_by_class_name("incentives--region-list")
     regions_links = regions_list.find_elements_by_class_name("action-trigger--link")
 
     incentives = {}
@@ -162,6 +163,7 @@ def load_data():
         incentives[region_name] = incentive_value
         driver.find_element_by_class_name("action-trigger--link").click()
         region_index += 1
+    done()
 
     data = {
         "trims": {
@@ -200,14 +202,24 @@ def load_data():
     data["last_updated"] = now_isoformat
     data["last_changed"] = last_changed or now_isoformat
 
-    print(data)
+    click.secho(f"\nData:", fg="blue")
+    click.echo(ujson.dumps(data, indent=2))
 
-    click.echo("Writing 'data.json' file...")
+    action("\nWriting 'data.json' file... ")
     with open(data_json_filepath, mode="w") as f:
         f.write(ujson.dumps(data))
+    done()
 
     return data
 
 
+def action(message: str, color: str = "blue"):
+    click.secho(message, nl=False, fg=color)
+
+
+def done():
+    click.secho("Done!", fg="green")
+
+
 if __name__ == '__main__':
-    load_data()
+    load_data_command()
