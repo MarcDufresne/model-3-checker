@@ -5,8 +5,12 @@ import arrow
 import click
 import ujson
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
 
 from model_3 import action, done
+
+
+UNKNOWN_AVAILABILITY_TEXT = "Unknown Availability"
 
 
 @click.command("load_data")
@@ -50,28 +54,36 @@ def load_data(headless: bool = True):
 
     # Extract trim data
     action("Getting trims... ")
-    trim_options = driver.find_elements_by_class_name("group--options_block")
-    mr_rwd = trim_options[0]
-    lr_awd = trim_options[1]
-    lr_perf = trim_options[2]
 
-    mr_rwd.click()
-    finance_item_prices = driver.find_elements_by_class_name("finance-item--price")
-    mr_rwd_full_price = finance_item_prices[1].text
-    mr_rwd_avail = driver.find_element_by_class_name("delivery-timing--date").text
+    main_trim_container = driver.find_element_by_class_name("group--child-container")
+    trim_containers = main_trim_container.find_elements_by_class_name("child-group--container")
 
-    lr_awd.click()
-    finance_item_prices = driver.find_elements_by_class_name("finance-item--price")
-    lr_awd_full_price = finance_item_prices[1].text
-    lr_awd_avail = driver.find_element_by_class_name("delivery-timing--date").text
+    first_trim_option = None
+    trims = {}
 
-    lr_perf.click()
-    finance_item_prices = driver.find_elements_by_class_name("finance-item--price")
-    lr_perf_full_price = finance_item_prices[1].text
-    lr_perf_avail = driver.find_element_by_class_name("delivery-timing--date").text
+    for trim_container in trim_containers:
+        trim_name = trim_container.find_element_by_class_name("text-loader--section-title").text
+        trim_options_containers = trim_container.find_elements_by_class_name("group--options_block--name")
+        trim_options = []
+        for trim_options_container in trim_options_containers:
+            if not first_trim_option:
+                first_trim_option = trim_options_container
 
-    # Reset trim selection
-    mr_rwd.click()
+            trim_options_container.click()
+            trim_option_name = trim_options_container.text
+            trim_option_price = driver.find_elements_by_class_name("finance-item--price")[1].text
+            try:
+                trim_option_avail = driver.find_element_by_class_name("delivery-timing--date").text
+            except NoSuchElementException:
+                trim_option_avail = UNKNOWN_AVAILABILITY_TEXT
+            trim_options.append({
+                "name": trim_option_name,
+                "price": trim_option_price,
+                "availability": trim_option_avail
+            })
+        trims[trim_name] = trim_options
+
+    first_trim_option.click()
     done()
 
     # Navigate to exterior options
@@ -168,20 +180,7 @@ def load_data(headless: bool = True):
     done()
 
     data = {
-        "trims": {
-            "mr_rwd": {
-                "price": mr_rwd_full_price,
-                "availability": mr_rwd_avail
-            },
-            "lr_awd": {
-                "price": lr_awd_full_price,
-                "availability": lr_awd_avail
-            },
-            "lr_perf": {
-                "price": lr_perf_full_price,
-                "availability": lr_perf_avail
-            }
-        },
+        "trims": trims,
         "std_battery": standard_battery_availability,
         "paint": paints,
         "wheels": wheels,
