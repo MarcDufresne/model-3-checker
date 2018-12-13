@@ -7,6 +7,18 @@ import ujson
 from model_3 import action, done
 
 
+format_values = {
+    "en_CA": {
+        "name": "Canada",
+        "currency": "CAD",
+    },
+    "en_US": {
+        "name": "US",
+        "currency": "USD",
+    }
+}
+
+
 @click.command()
 def render():
     cur_dir = os.path.dirname(os.path.realpath(__file__))
@@ -25,7 +37,7 @@ def render():
     template = env.get_template("index.html")
 
     with open(os.path.join(cur_dir, os.path.pardir, 'docs', 'index.html'), mode="w") as f:
-        f.write(template.render(**data))
+        f.write(template.render(regions=data, format_values=format_values))
     done()
 
 

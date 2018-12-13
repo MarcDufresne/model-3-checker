@@ -28,10 +28,6 @@ def load_data(headless: bool = True):
         previous_data = ujson.loads(data_file.read())
     done()
 
-    previous_change = previous_data.get("last_changed", None)
-    previous_data.pop("last_updated", None)
-    previous_data.pop("last_changed", None)
-
     # Set up browser
     action("Starting Chrome browser... ")
     chrome_options = webdriver.ChromeOptions()
@@ -44,167 +40,184 @@ def load_data(headless: bool = True):
     driver = webdriver.Chrome(options=chrome_options)
     done()
 
-    # GET page
-    driver.get("https://3.tesla.com/en_CA/model3/design?redirect=no")
+    regions = ["en_CA", "en_US"]
+    data = {}
 
-    # Extract standard battery data
-    action("Getting standard battery availability... ")
-    standard_battery_availability = driver.find_element_by_class_name("group--disclaimer").text
-    done()
+    for region in regions:
+        previous_region_data = previous_data.get(region, {})
+        previous_change = previous_region_data.get("last_changed", None)
+        previous_region_data.pop("last_updated", None)
+        previous_region_data.pop("last_changed", None)
 
-    # Extract trim data
-    action("Getting trims... ")
+        # GET page
+        driver.get(f"https://3.tesla.com/{region}/model3/design?redirect=no")
 
-    main_trim_container = driver.find_element_by_class_name("group--child-container")
-    trim_containers = main_trim_container.find_elements_by_class_name("child-group--container")
+        # Extract standard battery data
+        action("Getting standard battery availability... ")
+        standard_battery_availability = driver.find_element_by_class_name("group--disclaimer").text
+        done()
 
-    first_trim_option = None
-    trims = {}
+        # Extract trim data
+        action("Getting trims... ")
 
-    for trim_container in trim_containers:
-        trim_name = trim_container.find_element_by_class_name("text-loader--section-title").text
-        trim_options_containers = trim_container.find_elements_by_class_name("group--options_block--name")
-        trim_options = []
-        for trim_options_container in trim_options_containers:
-            if not first_trim_option:
-                first_trim_option = trim_options_container
+        main_trim_container = driver.find_element_by_class_name("group--child-container")
+        trim_containers = main_trim_container.find_elements_by_class_name("child-group--container")
 
-            trim_options_container.click()
-            trim_option_name = trim_options_container.text
-            trim_option_price = driver.find_elements_by_class_name("finance-item--price")[1].text
-            try:
-                trim_option_avail = driver.find_element_by_class_name("delivery-timing--date").text
-            except NoSuchElementException:
-                trim_option_avail = UNKNOWN_AVAILABILITY_TEXT
-            trim_options.append({
-                "name": trim_option_name,
-                "price": trim_option_price,
-                "availability": trim_option_avail
-            })
-        trims[trim_name] = trim_options
+        first_trim_option = None
+        trims = {}
 
-    first_trim_option.click()
-    done()
+        for trim_container in trim_containers:
+            trim_name = trim_container.find_element_by_class_name("text-loader--section-title").text
+            trim_options_containers = trim_container.find_elements_by_class_name("group--options_block--name")
+            trim_options = []
+            for trim_options_container in trim_options_containers:
+                if not first_trim_option:
+                    first_trim_option = trim_options_container
 
-    # Navigate to exterior options
-    nav_headers = driver.find_elements_by_class_name("packages-options--nav-title")
-    nav_headers[1].click()
-    sleep(1)
+                trim_options_container.click()
+                trim_option_name = trim_options_container.text
+                trim_option_price = driver.find_elements_by_class_name("finance-item--price")[1].text
+                try:
+                    trim_option_avail = driver.find_element_by_class_name("delivery-timing--date").text
+                except NoSuchElementException:
+                    trim_option_avail = UNKNOWN_AVAILABILITY_TEXT
+                trim_options.append({
+                    "name": trim_option_name,
+                    "price": trim_option_price,
+                    "availability": trim_option_avail
+                })
+            trims[trim_name] = trim_options
 
-    # Get exterior options list
-    exterior_options = driver.find_elements_by_class_name("group--options_asset--container")
+        first_trim_option.click()
+        done()
 
-    # Split paints and wheels
-    paint_options, wheel_options = exterior_options[:5], exterior_options[5:]
+        # Navigate to exterior options
+        nav_headers = driver.find_elements_by_class_name("packages-options--nav-title")
+        nav_headers[1].click()
+        sleep(1)
 
-    # Extract paint data
-    action("Getting paint options... ")
-    paints = {}
-    for paint_opt in paint_options:
-        paint_opt.click()
-        paint_name = driver.find_elements_by_class_name("group-option--detail-container_name")[0].text
-        paint_price = driver.find_elements_by_class_name("group-option--detail-container_price")[0].text
-        paints[paint_name] = paint_price
-    paint_options[0].click()
-    done()
+        # Get exterior options list
+        exterior_options = driver.find_elements_by_class_name("group--options_asset--container")
 
-    # Extract wheel data
-    action("Getting wheel options... ")
-    wheels = {}
-    for wheel_opt in wheel_options:
-        wheel_opt.click()
-        wheel_name = driver.find_elements_by_class_name("group-option--detail-container_name")[1].text
-        wheel_price = driver.find_elements_by_class_name("group-option--detail-container_price")[1].text
-        wheels[wheel_name] = wheel_price
-    wheel_options[0].click()
-    done()
+        # Split paints and wheels
+        paint_options, wheel_options = exterior_options[:5], exterior_options[5:]
 
-    # Navigate to Interior options
-    nav_headers[2].click()
-    sleep(1)
+        # Extract paint data
+        action("Getting paint options... ")
+        paints = {}
+        for paint_opt in paint_options:
+            paint_opt.click()
+            paint_name = driver.find_elements_by_class_name("group-option--detail-container_name")[0].text
+            paint_price = driver.find_elements_by_class_name("group-option--detail-container_price")[0].text
+            paints[paint_name] = paint_price
+        paint_options[0].click()
+        done()
 
-    interior_options = driver.find_elements_by_class_name("group--options_asset--container")
+        # Extract wheel data
+        action("Getting wheel options... ")
+        wheels = {}
+        for wheel_opt in wheel_options:
+            wheel_opt.click()
+            wheel_name = driver.find_elements_by_class_name("group-option--detail-container_name")[1].text
+            wheel_price = driver.find_elements_by_class_name("group-option--detail-container_price")[1].text
+            wheels[wheel_name] = wheel_price
+        wheel_options[0].click()
+        done()
 
-    # Extract interior options
-    action("Getting interior options... ")
-    interiors = {}
-    for interior in interior_options:
-        interior.click()
-        interior_name = driver.find_element_by_class_name("group-option--detail-container_name").text
-        interior_price = driver.find_element_by_class_name("group-option--detail-container_price").text
-        interiors[interior_name] = interior_price
-    interior_options[0].click()
-    done()
+        # Navigate to Interior options
+        nav_headers[2].click()
+        sleep(1)
 
-    # Navigate to Autopilot
-    nav_headers[3].click()
-    sleep(1)
+        interior_options = driver.find_elements_by_class_name("group--options_asset--container")
 
-    # Extract EAP details
-    action("Getting EAP pricing... ")
-    eap_price = driver.find_element_by_class_name("group--options_card-container_price").text
-    eap_later_price = driver.find_element_by_class_name("group--option-disclaimer").text
-    done()
+        # Extract interior options
+        action("Getting interior options... ")
+        interiors = {}
+        for interior in interior_options:
+            interior.click()
+            interior_name = driver.find_element_by_class_name("group-option--detail-container_name").text
+            interior_price = driver.find_element_by_class_name("group-option--detail-container_price").text
+            interiors[interior_name] = interior_price
+        interior_options[0].click()
+        done()
 
-    # Navigate to Payment
-    nav_headers[4].click()
-    sleep(1)
+        # Navigate to Autopilot
+        nav_headers[3].click()
+        sleep(1)
 
-    # Incentives
-    action("Getting incentives... ")
-    driver.find_element_by_class_name("finance-content--modal").click()
-    driver.find_element_by_class_name("tds-tabs--vertical").find_elements_by_class_name("tds-tab-label")[2].click()
-    sleep(1)
+        # Extract EAP details
+        action("Getting EAP pricing... ")
+        eap_price = driver.find_element_by_class_name("group--options_card-container_price").text
+        eap_later_price = driver.find_element_by_class_name("group--option-disclaimer").text
+        done()
 
-    try:
-        regions_list = driver.find_element_by_class_name("incentives--region-list")
-    except Exception:
-        driver.find_element_by_class_name("action-trigger--link").click()
-        regions_list = driver.find_element_by_class_name("incentives--region-list")
+        # Navigate to Payment
+        nav_headers[4].click()
+        sleep(1)
 
-    regions_links = regions_list.find_elements_by_class_name("action-trigger--link")
+        # Incentives
+        action("Getting incentives... ")
+        driver.find_element_by_class_name("finance-content--modal").click()
+        driver.find_element_by_class_name("tds-tabs--vertical").find_elements_by_class_name("tds-tab-label")[2].click()
+        sleep(1)
 
-    incentives = {}
+        try:
+            regions_list = driver.find_element_by_class_name("incentives--region-list")
+        except NoSuchElementException:
+            driver.find_element_by_class_name("action-trigger--link").click()
+            regions_list = driver.find_element_by_class_name("incentives--region-list")
 
-    region_index = 0
-    while region_index < len(regions_links):
-        region = (driver.find_element_by_class_name("incentives--region-list")
-                  .find_elements_by_class_name("action-trigger--link")[region_index])
-        region_name = region.text
-        region.click()
-        incentive_block = driver.find_element_by_class_name("incentives--value-block")
-        incentive_value = incentive_block.find_element_by_class_name("value").text
-        incentives[region_name] = incentive_value
-        driver.find_element_by_class_name("action-trigger--link").click()
-        region_index += 1
-    done()
+        regions_links = regions_list.find_elements_by_class_name("action-trigger--link")
 
-    data = {
-        "trims": trims,
-        "std_battery": standard_battery_availability,
-        "paint": paints,
-        "wheels": wheels,
-        "interiors": interiors,
-        "eap": {
-            "price": eap_price,
-            "later": eap_later_price
-        },
-        "incentives": incentives,
-    }
+        incentives = {}
 
-    changed = previous_data != data
+        try:
+            federal_incentive_block = driver.find_element_by_class_name("incentives--federal")
+            incentives["Federal"] = federal_incentive_block.find_element_by_class_name("value").text
+        except NoSuchElementException:
+            pass
 
-    last_changed = previous_change
-    now_format = arrow.utcnow().format(fmt="MMM D YYYY, HH:mm", locale='en_ca')
+        region_index = 0
+        while region_index < len(regions_links):
+            inc_region = (driver.find_element_by_class_name("incentives--region-list")
+                          .find_elements_by_class_name("action-trigger--link")[region_index])
+            region_name = inc_region.text
+            inc_region.click()
+            incentive_block = driver.find_element_by_class_name("incentives--value-block")
+            incentive_value = incentive_block.find_elements_by_class_name("value")[-1].text
+            incentives[region_name] = incentive_value
+            driver.find_element_by_class_name("action-trigger--link").click()
+            region_index += 1
+        done()
 
-    if changed:
-        last_changed = now_format
+        region_data = {
+            "trims": trims,
+            "std_battery": standard_battery_availability,
+            "paint": paints,
+            "wheels": wheels,
+            "interiors": interiors,
+            "eap": {
+                "price": eap_price,
+                "later": eap_later_price
+            },
+            "incentives": incentives,
+        }
 
-    data["last_updated"] = now_format
-    data["last_changed"] = last_changed or now_format
+        changed = previous_data != data
 
-    click.secho(f"\nData:", fg="blue")
-    click.echo(ujson.dumps(data, indent=2))
+        last_changed = previous_change
+        now_format = arrow.utcnow().format(fmt="MMM D YYYY, HH:mm", locale='en_ca')
+
+        if changed:
+            last_changed = now_format
+
+        region_data["last_updated"] = now_format
+        region_data["last_changed"] = last_changed or now_format
+
+        click.secho(f"\nData for {region}:", fg="blue")
+        click.echo(ujson.dumps(region_data, indent=2))
+
+        data[region] = region_data
 
     action("\nWriting 'data.json' file... ")
     with open(data_json_filepath, mode="w") as f:
