@@ -4,15 +4,24 @@
         <ul class="nav nav-tabs" role="tablist">
             {% for region_code in regions %}
                 <li class="nav-item">
-                    <a class="nav-link {% if region_code == "en_CA" %}active{% endif %}" data-toggle="tab" id="{{ region_code }}_tab" href="#{{ region_code }}" role="tab" aria-controls="{{ region_code }}">
+                    <a class="nav-link {% if region_code == "en_CA" %}active{% endif %}" data-toggle="tab"
+                       id="{{ region_code }}_tab" href="#{{ region_code }}" role="tab"
+                       aria-controls="{{ region_code }}">
                         {{ format_values[region_code].name }}
                     </a>
                 </li>
             {% endfor %}
+            <li>
+                <a class="nav-link" data-toggle="tab" id="price_calc_tab" href="#price_calc" role="tab"
+                   aria-controls="price_calc">
+                    APR Calculator
+                </a>
+            </li>
         </ul>
         <div class="tab-content">
             {% for region_name, region_data in regions.items() %}
-                <div class="tab-pane fade {% if region_name == "en_CA" %}show active{% endif %}" id="{{ region_name }}" role="tabpanel" aria-labelledby="{{ region_code }}_tab">
+                <div class="tab-pane fade {% if region_name == "en_CA" %}show active{% endif %}" id="{{ region_name }}"
+                     role="tabpanel" aria-labelledby="{{ region_code }}_tab">
                     <div class="row mt-5">
                         {% for trim_name, trim_options in region_data.trims.items() %}
                             <div class="col-sm">
@@ -97,28 +106,187 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row mt-5">
+                        <div class="col-sm text-center">
+                            <p class="text-secondary small">
+                                All amounts shown are {{ format_values[region_name].currency }} and exclude any taxes,
+                                fees
+                                and savings.
+                            </p>
+                            <p class="text-secondary small">
+                                Last Updated: <span id="last_update">{{ region_data.last_updated }}</span> UTC
+                                <br>
+                                Last Change: <span id="last_change">{{ region_data.last_changed }}</span> UTC
+                                <br>
+                                Updates every 4 hours
+                            </p>
+                            <p class="text-secondary small">
+                                Built by <a class="text-dark" href="https://github.com/MarcDufresne">MarcDufresne</a>
+                                <br>
+                                Inspired by <a class="text-dark" href="https://webxl.net/tesla3/">WebXL's Model 3 Price
+                                Checker</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            <div class="tab-pane fade" id="price_calc" role="tabpanel" aria-labelledby="price_calc_tab">
                 <div class="row mt-5">
-                    <div class="col-sm text-center">
-                        <p class="text-secondary small">
-                            All amounts shown are {{ format_values[region_name].currency }} and exclude any taxes, fees
-                            and savings.
-                        </p>
-                        <p class="text-secondary small">
-                            Last Updated: <span id="last_update">{{ region_data.last_updated }}</span> UTC
-                            <br>
-                            Last Change: <span id="last_change">{{ region_data.last_changed }}</span> UTC
-                            <br>
-                            Updates every 4 hours
-                        </p>
-                        <p class="text-secondary small">
-                            Built by <a class="text-dark" href="https://github.com/MarcDufresne">MarcDufresne</a>
-                            <br>
-                            Inspired by <a class="text-dark" href="https://webxl.net/tesla3/">WebXL's Model 3 Price
-                            Checker</a>
-                        </p>
+                    <div class="col-sm">
+                        <form id="apr_form">
+                            <div class="form-group">
+                                <label for="base_price">Base Price</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <div class="input-group-text">$</div>
+                                    </div>
+                                    <input type="number" placeholder="66700" id="base_price" class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="trade_in">Trade-In</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <div class="input-group-text">$</div>
+                                    </div>
+                                    <input type="number" placeholder="8500" id="trade_in" class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="tax_rate">Tax Rate</label>
+                                <div class="input-group">
+                                    <input type="number" placeholder="14.975" id="tax_rate" class="form-control"
+                                           step="0.001">
+                                    <div class="input-group-append">
+                                        <div class="input-group-text">%</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="down_payment">Down Payment</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <div class="input-group-text">$</div>
+                                    </div>
+                                    <input type="number" placeholder="3200" id="down_payment" class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="incentive">Incentive</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <div class="input-group-text">$</div>
+                                    </div>
+                                    <input type="number" placeholder="8000" id="incentive" class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="apr">APR</label>
+                                <div class="input-group">
+                                    <input type="number" placeholder="3.15" id="apr" class="form-control"
+                                           step="0.01">
+                                    <div class="input-group-append">
+                                        <div class="input-group-text">%</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="term">Term (Months)</label>
+                                <div class="input-group">
+                                    <select id="term" class="form-control">
+                                        <option value="12">12</option>
+                                        <option value="24">24</option>
+                                        <option value="36">36</option>
+                                        <option value="48">48</option>
+                                        <option value="60">60</option>
+                                        <option value="72">72</option>
+                                        <option value="84" selected>84</option>
+                                        <option value="96">96</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-success">Calculate</button>
+                        </form>
+                    </div>
+                    <div class="col-sm">
+                        <form id="apr_res_form">
+                            <div class="form-group">
+                                <label for="tax_amount">Tax Amount</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <div class="input-group-text">$</div>
+                                    </div>
+                                    <input type="text" id="tax_amount" class="form-control"
+                                           readonly>
+                                </div>
+                                <small class="text-muted form-text">
+                                    (Base Price - Trade-In) * Tax Rate
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label for="financed_amount">Financed Amount</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <div class="input-group-text">$</div>
+                                    </div>
+                                    <input type="text" id="financed_amount" class="form-control"
+                                           readonly>
+                                </div>
+                                <small class="text-muted form-text">
+                                    Base Price + Tax Amount - Down Payment - Incentive
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label for="monthly_payment">Monthly Payment</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <div class="input-group-text">$</div>
+                                    </div>
+                                    <input type="text" id="monthly_payment" class="form-control"
+                                           readonly>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="total_payment">Total Payment</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <div class="input-group-text">$</div>
+                                    </div>
+                                    <input type="text" id="total_payment" class="form-control"
+                                           readonly>
+                                </div>
+                                <small class="text-muted form-text">
+                                    Term * Monthly Payment
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label for="interests">Interests</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <div class="input-group-text">$</div>
+                                    </div>
+                                    <input type="text" id="interests" class="form-control" readonly>
+                                </div>
+                                <small class="text-muted form-text">
+                                    Total Payment - Financed Amount
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label for="cto">Cost to Own</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <div class="input-group-text">$</div>
+                                    </div>
+                                    <input type="text" id="cto" class="form-control" readonly>
+                                </div>
+                                <small class="text-muted form-text">
+                                    Total Payment + Down Payment
+                                </small>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
-            {% endfor %}
+        </div>
     </div>
 {% endblock %}
