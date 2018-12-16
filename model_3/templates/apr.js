@@ -8,7 +8,7 @@ function calculate_apr() {
     const term = parseInt($("#term").val());
 
     let tax_amount = (base_price - trade_in) * tax_rate;
-    let financed_amount = base_price + tax_amount - down_payment - incentive;
+    let financed_amount = base_price + tax_amount - down_payment - incentive - trade_in;
     let pmt_val = pmt(apr / 12, term, -financed_amount);
     let total_payment = term * pmt_val;
     let interests = total_payment - financed_amount;
