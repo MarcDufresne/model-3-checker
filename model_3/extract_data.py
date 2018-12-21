@@ -6,6 +6,7 @@ import click
 import ujson
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support.select import Select
 
 from model_3 import action, done
 
@@ -40,7 +41,10 @@ def load_data(headless: bool = True):
     driver = webdriver.Chrome(options=chrome_options)
     done()
 
-    regions = ["en_CA", "en_US"]
+    regions = [
+        "en_CA",
+        "en_US",
+    ]
     data = {}
 
     for region in regions:
@@ -157,37 +161,7 @@ def load_data(headless: bool = True):
 
         # Incentives
         action("Getting incentives... ")
-        driver.find_element_by_class_name("finance-content--modal").click()
-        driver.find_element_by_class_name("tds-tabs--vertical").find_elements_by_class_name("tds-tab-label")[2].click()
-        sleep(1)
-
-        try:
-            regions_list = driver.find_element_by_class_name("incentives--region-list")
-        except NoSuchElementException:
-            driver.find_element_by_class_name("action-trigger--link").click()
-            regions_list = driver.find_element_by_class_name("incentives--region-list")
-
-        regions_links = regions_list.find_elements_by_class_name("action-trigger--link")
-
-        incentives = {}
-
-        try:
-            federal_incentive_block = driver.find_element_by_class_name("incentives--federal")
-            incentives["Federal"] = federal_incentive_block.find_element_by_class_name("value").text
-        except NoSuchElementException:
-            pass
-
-        region_index = 0
-        while region_index < len(regions_links):
-            inc_region = (driver.find_element_by_class_name("incentives--region-list")
-                          .find_elements_by_class_name("action-trigger--link")[region_index])
-            region_name = inc_region.text
-            inc_region.click()
-            incentive_block = driver.find_element_by_class_name("incentives--value-block")
-            incentive_value = incentive_block.find_elements_by_class_name("value")[-1].text
-            incentives[region_name] = incentive_value
-            driver.find_element_by_class_name("action-trigger--link").click()
-            region_index += 1
+        incentives = get_incentives(driver)
         done()
 
         region_data = {
@@ -225,6 +199,90 @@ def load_data(headless: bool = True):
     done()
 
     return data
+
+
+def get_incentives(driver):
+    driver.find_element_by_class_name("finance-content--modal").click()
+    driver.find_element_by_class_name("tds-tabs--vertical").find_elements_by_class_name("tds-tab-label")[2].click()
+    sleep(1)
+
+    try:
+        try:
+            driver.find_element_by_class_name("incentives--region-list")
+        except NoSuchElementException:
+            driver.find_element_by_class_name("action-trigger--link").click()
+        finally:
+            regions_list = driver.find_element_by_class_name("incentives--region-list")
+            incentives = _get_list_incentives(driver, regions_list)
+    except NoSuchElementException:
+        incentives = _get_dropdown_incentives(driver)
+
+    return incentives
+
+
+def _get_list_incentives(driver, regions_list):
+    regions_links = regions_list.find_elements_by_class_name("action-trigger--link")
+
+    incentives = {}
+
+    try:
+        federal_incentive_block = driver.find_element_by_class_name("incentives--federal")
+        incentives["Federal"] = federal_incentive_block.find_element_by_class_name("value").text
+    except NoSuchElementException:
+        pass
+
+    region_index = 0
+    while region_index < len(regions_links):
+        inc_region = (driver.find_element_by_class_name("incentives--region-list")
+                      .find_elements_by_class_name("action-trigger--link")[region_index])
+
+        region_name = inc_region.text
+
+        inc_region.click()
+
+        incentive_block = driver.find_element_by_class_name("incentives--value-block")
+        incentive_value = incentive_block.find_elements_by_class_name("value")[-1].text
+        incentives[region_name] = incentive_value
+
+        driver.find_element_by_class_name("action-trigger--link").click()
+        region_index += 1
+    return incentives
+
+
+def _get_dropdown_incentives(driver):
+    incentives_container = driver.find_element_by_class_name("financial--highlighted-summary")
+
+    try:
+        # Try to reset incentive
+        incentives_container.find_element_by_class_name("action-trigger--link").click()
+    except NoSuchElementException:
+        pass
+
+    incentives = {}
+
+    regions_dropdown = Select(incentives_container.find_element_by_class_name("tds-input-select"))
+    for index, option in enumerate(regions_dropdown.options):
+        regions_dropdown.select_by_index(index)
+        list_items = incentives_container.find_elements_by_class_name("line-item")[1:]
+        for item in list_items:
+            try:
+                label_container = item.find_element_by_class_name("line-item--label")
+                label = label_container.text
+                try:
+                    link_text = label_container.find_element_by_class_name("action-trigger--link").text
+                    label = label[:-len(link_text)]
+                except NoSuchElementException:
+                    pass
+                amount = item.find_element_by_class_name("line-item--value").text
+                incentives[label] = amount
+            except NoSuchElementException:
+                pass
+
+        # Reset
+        incentives_container.find_element_by_class_name("action-trigger--link").click()
+        regions_dropdown = Select(incentives_container.find_element_by_class_name("tds-input-select"))
+
+    return incentives
 
 
 if __name__ == '__main__':
